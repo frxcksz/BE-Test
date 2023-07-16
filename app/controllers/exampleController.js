@@ -5,25 +5,6 @@ const WebSocket = require('ws');
 const axios = require('axios');
 const redis = require('redis');
 
-// Create a Redis client
-const redisClient = redis.createClient({
-  socket: {
-    host: '127.0.0.1',
-    port: 9999,
-  }
-})
-
-redisClient.connect();
-
-redisClient.on('connect', () => {
-  console.log('Connected');
-});
-
-redisClient.on('error', err => { 
-  console.log('Redis Server Error', err);
-  process.exit(1);
-});
-
 exports.exampleFunction = (req, res) => {
   res.json({ message: "Hello" });
 };
@@ -152,10 +133,29 @@ exports.callmeWebSocket = (req, res) => {
 
 exports.getData = async (req, res) => {
   try {
-    // Check the data in Redis cache
+    // create a Redis client
+    const redisClient = redis.createClient({
+      socket: {
+        host: '127.0.0.1',
+        port: 9999,
+      }
+    });
+
+    redisClient.connect();
+
+    redisClient.on('connect', () => {
+      console.log('Connected');
+    });
+
+    redisClient.on('error', err => { 
+      console.log('Redis Server Error', err);
+      process.exit(1);
+    });
+
+    // check the data in Redis cache
     redisClient.get("attackStatistics", async (err, cachedData) => {
       if (cachedData) {
-        // Return the cached data
+        // return the cached data
         const data = JSON.parse(cachedData);
         res.status(200).json({
           success: true,
@@ -163,14 +163,14 @@ exports.getData = async (req, res) => {
           data,
         });
       } else {
-        // Fetch from API and store in cache
+        // fetch from API and store in cache
         const response = await axios.get("https://livethreatmap.radware.com/api/map/attacks?limit=10");
         const data = response.data;
 
-        // Store the data into the Redis cache with expiration of 1 hour
+        // store the data into the Redis cache with expiration of 1 hour
         redisClient.setex("attackStatistics", 3600, JSON.stringify(data));
 
-        // Store the data into the database
+        // store the data into the database
         await db.sequelize.query(
           `INSERT INTO attacks ("destinationCountry", "sourceCountry", "attackType")
           VALUES ${data
@@ -181,14 +181,14 @@ exports.getData = async (req, res) => {
             .join(", ")}`
         );
 
-        // Retrieve attack statistics from the database
+        // retrieve attack statistics from the database
         const result = await db.sequelize.query(`
           SELECT "destinationCountry", COUNT(DISTINCT "attackType") as "totalTypes"
           FROM attacks
           GROUP BY "destinationCountry"
         `);
 
-        // Response
+        // response
         const label = result[0].map((item) => item.destinationCountry);
         const total = result[0].map((item) => parseInt(item.totalTypes));
 
@@ -202,7 +202,7 @@ exports.getData = async (req, res) => {
         });
       }
 
-      // Close the Redis client
+      // close the Redis client
       redisClient.quit();
     });
   } catch (error) {
