@@ -22,6 +22,12 @@ const db = require("./app/models");
 
 db.sequelize.sync();
 
+// middleware functions
+//const { authenticateJWT } = require("./app/middleware/exampleMiddleware");
+
+// apply JWT authentication
+//app.use(authenticateJWT);
+
 // never enable the code below in production
 // force: true will drop the table if it already exists
 // db.sequelize.sync({ force: true }).then(() => {
@@ -31,14 +37,16 @@ db.sequelize.sync();
 
 // simple route
 app.get("/", (req, res) => {
-  res.json({ message: "Hello" });
+   res.json({ message: "Hello" });
 });
 
 // routes
-// require("./app/routes/exaole.routes")(app);
+require("./app/routes/exampleRoutes")(app);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 7878;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
+
+module.exports = app;
