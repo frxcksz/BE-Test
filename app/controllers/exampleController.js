@@ -28,26 +28,33 @@ exports.exampleFunction = (req, res) => {
   res.json({ message: "Hello" });
 };
 
-exports.refactoreMe1 = (req, res) => {
-  // function ini sebenarnya adalah hasil survey dri beberapa pertnayaan, yang mana nilai dri jawaban tsb akan di store pada array seperti yang ada di dataset
-  const data = db.sequelize.query(`select * from surveys`);
-  const indexes = Array.from(Array(10), () => []);
+exports.refactoreMe1 = async (req, res) => {
+  try {
+    // fetch data from the database
+    const [results] = await db.sequelize.query('SELECT * FROM surveys');
+    const data = results.map((result) => result.values);
 
-  data.map((e) => {
-    for (let i = 0; i < 10; i++) {
-      indexes[i].push(e.values[i]);
-    }
-  });
+    const indexes = Array.from(Array(data[0].length), () => []);
 
-  const totalIndexes = indexes.map((index) => {
-    return index.reduce((a, b) => a + b, 0) / 10;
-  });
+    data.forEach((values) => {
+      values.forEach((answer, index) => {
+        indexes[index].push(answer);
+      });
+    });
 
-  res.status(200).send({
-    statusCode: 200,
-    success: true,
-    data: totalIndexes,
-  });
+    res.status(200).send({
+      statusCode: 200,
+      success: true,
+      data: indexes,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      statusCode: 500,
+      success: false,
+      error: "Internal Server Error",
+    });
+  }
 };
 
 exports.refactoreMe2 = async (req, res) => {
