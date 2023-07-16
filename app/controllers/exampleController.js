@@ -41,6 +41,7 @@ exports.refactoreMe1 = async (req, res) => {
         indexes[index].push(answer);
       });
     });
+    
 
     res.status(200).send({
       statusCode: 200,
@@ -58,16 +59,21 @@ exports.refactoreMe1 = async (req, res) => {
 };
 
 exports.refactoreMe2 = async (req, res) => {
-  // function ini untuk menjalakan query sql insert dan mengupdate field "dosurvey" yang ada di table user menjadi true, jika melihat data yang di berikan, salah satu usernnya memiliki dosurvey dengan data false
   try {
-    const survey = await Survey.create({
-      userId: req.body.userId,
-      values: req.body.values, // [] kirim array
+    const { userId, values } = req.body;
+
+    // new survey
+    const survey = await db.Surveys.create({
+      userId: userId,
+      values: values,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     });
 
-    await User.update(
+    // update user's dosurvey field to true
+    await db.User.update(
       { dosurvey: true },
-      { where: { id: req.body.id } }
+      { where: { id: userId, dosurvey: false } }
     );
 
     console.log("success");
@@ -78,8 +84,8 @@ exports.refactoreMe2 = async (req, res) => {
       success: true,
       data: survey,
     });
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
     res.status(500).send({
       statusCode: 500,
       message: "Cannot post survey.",

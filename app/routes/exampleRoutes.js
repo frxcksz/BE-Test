@@ -14,7 +14,7 @@ module.exports = (app) => {
 
   router.get("/", exampleController.getData);
   router.get("/refactorme1", exampleController.refactoreMe1);
-  router.get("/refactorme2", exampleController.refactoreMe2);
+  router.post("/refactorme2", exampleController.refactoreMe2);
   router.get("/callmewss", exampleController.callmeWebSocket);
 
   router.get("/protected", [exampleMiddleware.authenticateJWT, exampleMiddleware.checkUserRole("admin")], exampleController.protectedFunction);
